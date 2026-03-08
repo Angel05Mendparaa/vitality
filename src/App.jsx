@@ -734,7 +734,7 @@ function LoginScreen({ error }) {
         <div className="sidebar-logo" style={{ margin: '0 auto 20px', width: '50px', height: '50px' }}>
           <Microscope size={24} />
         </div>
-        <h1 className="page-title" style={{ fontSize: '1.4rem' }}>Embryo<span style={{ color: 'var(--accent)' }}>AI</span></h1>
+        <h1 className="page-title" style={{ fontSize: '1.4rem' }}>Vitality<span style={{ color: 'var(--accent)' }}>.AI</span></h1>
         <p className="page-subtitle" style={{ marginBottom: '30px' }}>Clinical Embryo Viability Analysis</p>
         
         {error && (
