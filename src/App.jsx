@@ -716,7 +716,7 @@ function ReportsTab({ reports, settings }) {
 // Auth Guard Component
 // ═══════════════════════════════════════════════════════
 
-function LoginScreen() {
+function LoginScreen({ error }) {
   const { loginWithRedirect, isLoading } = useAuth0();
 
   return (
@@ -728,6 +728,13 @@ function LoginScreen() {
         <h1 className="page-title" style={{ fontSize: '1.4rem' }}>Embryo<span style={{ color: 'var(--accent)' }}>AI</span></h1>
         <p className="page-subtitle" style={{ marginBottom: '30px' }}>Clinical Embryo Viability Analysis</p>
         
+        {error && (
+          <div className="error-box" style={{ marginBottom: '20px', fontSize: '0.85rem' }}>
+            <div className="error-icon"><AlertTriangle size={14} /></div>
+            <div style={{ textAlign: 'left' }}>{error.message}</div>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="loading-state" style={{ padding: '20px 0' }}>
             <div className="spinner" />
@@ -754,7 +761,7 @@ function LoginScreen() {
 // Main Component Structure
 // ═══════════════════════════════════════════════════════
 export default function App() {
-  const { isAuthenticated, isLoading, user, logout } = useAuth0();
+  const { isAuthenticated, isLoading, user, logout, error: authError } = useAuth0();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [settings, setSettings] = useState(defaultSettings);
   
@@ -896,7 +903,7 @@ export default function App() {
   const embryos = results?.embryos || [];
 
   if (isLoading || !isAuthenticated) {
-    return <LoginScreen />;
+    return <LoginScreen error={authError} />;
   }
 
   return (
