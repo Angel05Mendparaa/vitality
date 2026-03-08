@@ -611,11 +611,45 @@ function ReportsTab({ reports, settings }) {
     // If we have actual embryo data stored in the report object, we can table it.
     // Down below when we create the report object, we need to attach the embryos array to it.
     
-    let startY = 85;
-    
+    let currentY = 85;
+
+    // Add Images Section if available
     if (report.embryos && report.embryos.length > 0) {
       doc.setFontSize(14);
-      doc.text(`Analyzed Embryos (${report.count})`, 14, startY);
+      doc.text("Clinical Evidence (Embryo Images)", 14, currentY);
+      currentY += 10;
+
+      const imgWidth = 40;
+      const imgHeight = 40;
+      const margin = 10;
+      let currentX = 14;
+
+      report.embryos.forEach((emb, i) => {
+        const imgUrl = report.previewMap?.[emb.filename];
+        if (imgUrl) {
+          // Wrap to next row if needed
+          if (currentX + imgWidth > 196) {
+            currentX = 14;
+            currentY += imgHeight + 15;
+          }
+          
+          try {
+            doc.addImage(imgUrl, 'JPEG', currentX, currentY, imgWidth, imgHeight);
+            doc.setFontSize(8);
+            doc.text(`Rank #${emb.rank || i+1}`, currentX, currentY + imgHeight + 5);
+            currentX += imgWidth + margin;
+          } catch (e) {
+            console.error("PDF Image Add Error:", e);
+          }
+        }
+      });
+      
+      currentY += imgHeight + 25;
+    }
+
+    if (report.embryos && report.embryos.length > 0) {
+      doc.setFontSize(14);
+      doc.text(`Analysis Metrics (${report.count})`, 14, currentY);
       
       const tableColumn = ["Rank", "Embryo ID", "Score", "Quality", "Confidence", "Action"];
       const tableRows = [];
@@ -634,7 +668,7 @@ function ReportsTab({ reports, settings }) {
       });
 
       doc.autoTable({
-        startY: startY + 6,
+        startY: currentY + 6,
         head: [tableColumn],
         body: tableRows,
         theme: 'grid',
@@ -644,7 +678,7 @@ function ReportsTab({ reports, settings }) {
       });
     } else {
       doc.setFontSize(12);
-      doc.text("Analysis summary records (No detailed row data available)", 14, startY);
+      doc.text("Analysis summary records (No detailed row data available)", 14, currentY);
     }
     
     doc.save(`${report.id}_${report.patient.replace(' ', '_')}.pdf`);
@@ -676,6 +710,7 @@ function ReportsTab({ reports, settings }) {
                 <th>Date</th>
                 <th>Patient ID</th>
                 <th>Batch Reference</th>
+                <th>Images</th>
                 <th>Embryos</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -688,6 +723,19 @@ function ReportsTab({ reports, settings }) {
                   <td>{report.date}</td>
                   <td>{report.patient}</td>
                   <td style={{ fontFamily: 'var(--font)' }}>{report.batch}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      {report.embryos?.slice(0, 3).map((emb, i) => (
+                        <img 
+                          key={i} 
+                          src={report.previewMap?.[emb.filename]} 
+                          style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--border)' }} 
+                          alt=""
+                        />
+                      ))}
+                      {report.count > 3 && <span style={{ fontSize: '0.7rem', alignSelf: 'center', color: 'var(--muted)' }}>+{report.count - 3}</span>}
+                    </div>
+                  </td>
                   <td>{report.count} analyzed</td>
                   <td>
                     <span className={`report-badge ${report.status === 'Completed' ? 'success' : 'pending'}`}>
@@ -708,7 +756,7 @@ function ReportsTab({ reports, settings }) {
               ))}
               {reports.length === 0 && (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: 'var(--muted)' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '32px', color: 'var(--muted)' }}>
                     No analysis reports generated yet.
                   </td>
                 </tr>
@@ -774,12 +822,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [settings, setSettings] = useState(defaultSettings);
   
-  // Historical Reports State
-  const [reports, setReports] = useState([
-    { id: 'REP-1049', date: 'Oct 24, 2023', patient: 'Patient #439', batch: 'EMB-094', count: 4, status: 'Completed' },
-    { id: 'REP-1048', date: 'Oct 23, 2023', patient: 'Patient #421', batch: 'EMB-093', count: 6, status: 'Completed' },
-    { id: 'REP-1047', date: 'Oct 20, 2023', patient: 'Patient #392', batch: 'EMB-092', count: 3, status: 'Pending Review' },
-  ]);
+  // Historical Reports State (Start empty for now per user request)
+  const [reports, setReports] = useState([]);
   
   // Analysis State
   const [files, setFiles] = useState([]);
@@ -896,7 +940,8 @@ export default function App() {
         batch: newBatchRef,
         count: embryos.length,
         status: 'Completed',
-        embryos: embryos // attach the full array for the PDF!
+        embryos: embryos,
+        previewMap: { ...fileMapRef.current } // Persist the blobs/previews in the report
       };
       setReports(prev => [newReport, ...prev]);
 
