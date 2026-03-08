@@ -45,8 +45,15 @@ async function fetchInsightFromBackend(result, totalEmbryos) {
   
   if (!res.ok) throw new Error('Failed to fetch insight from backend');
   const data = await res.json();
-  // The API just returns the raw string content as shown in the docs
-  return data;
+  
+  // Robustly extract the string. Some APIs return { insight: "..." }, others a raw string, 
+  // and some might return { message: "..." }. This prevents React Error #31.
+  if (typeof data === 'string') return data;
+  if (data && typeof data.insight === 'string') return data.insight;
+  if (data && typeof data.message === 'string') return data.message;
+  if (data && typeof data.content === 'string') return data.content;
+  
+  return JSON.stringify(data); // Last resort to avoid crashing React
 }
 
 // ═══════════════════════════════════════════════════════
@@ -207,7 +214,9 @@ function AIInsightBox({ insight, isLoading }) {
           AI insight unavailable — please try again later.
         </div>
       ) : insight ? (
-        <div className="ai-insight-text">{insight}</div>
+        <div className="ai-insight-text">
+          {typeof insight === 'string' ? insight : JSON.stringify(insight)}
+        </div>
       ) : (
         <div className="ai-insight-error">Waiting for analysis...</div>
       )}
