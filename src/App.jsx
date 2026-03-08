@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import './index.css';
 
 // ═══════════════════════════════════════════════════════
@@ -688,7 +688,7 @@ function ReportsTab({ reports, settings }) {
         tableRows.push(record);
       });
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: currentY + 6,
         head: [tableColumn],
         body: tableRows,
